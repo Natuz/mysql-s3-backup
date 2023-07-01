@@ -9,7 +9,7 @@ const uploadToS3 = async (file: {name: string, path: string}): Promise<void> => 
     region: env.AWS_S3_REGION,
   };
 
-  console.log(`Uploading backup to S3 at ${bucket}/${file.path}...`);
+  console.log(`Uploading backup to S3 at ${bucket}/${file.name}...`);
 
   if (env.AWS_S3_ENDPOINT) {
     console.log(`Using custom endpoint: ${env.AWS_S3_ENDPOINT}`);
