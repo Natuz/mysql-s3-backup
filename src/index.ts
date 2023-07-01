@@ -13,4 +13,4 @@ const job = new CronJob(env.BACKUP_CRON_SCHEDULE, async () => {
 
 job.start();
 
-console.log("Backup cron scheduler running.")
+console.log("Backup cron scheduler started.")

@@ -3,7 +3,7 @@ import { PutObjectCommand, S3Client, S3ClientConfig } from "@aws-sdk/client-s3";
 import { createReadStream, unlink } from "fs";
 import { env } from "./env";
 
-const uploadToS3 = async (file: { name: string, path: string }): Promise<void> => {
+const uploadToS3 = async (file: {name: string, path: string}): Promise<void> => {
   const bucket = env.AWS_S3_BUCKET;
   const clientOptions: S3ClientConfig = {
     region: env.AWS_S3_REGION,
@@ -69,7 +69,7 @@ export const backup = async (): Promise<void> => {
 
   const timestamp = new Date().toISOString().replace(/[:.]+/g, '-');
   const filename = `backup-${timestamp}.sql.gz`;
-  const filepath = `/backups/${filename}`;
+  const filepath = `/tmp/${filename}`;
 
   await dumpToFile(filepath);
   await uploadToS3({name: filename, path: filepath});
