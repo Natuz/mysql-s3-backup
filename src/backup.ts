@@ -3,7 +3,7 @@ import { PutObjectCommand, S3Client, S3ClientConfig } from "@aws-sdk/client-s3";
 import { createReadStream, unlink } from "fs";
 import { env } from "./env";
 
-const uploadToS3 = async (file: {name: string, path: string}): Promise<void> => {
+const uploadToS3 = async (file: { name: string, path: string }): Promise<void> => {
   const bucket = env.AWS_S3_BUCKET;
   const clientOptions: S3ClientConfig = {
     region: env.AWS_S3_REGION,
@@ -25,29 +25,32 @@ const uploadToS3 = async (file: {name: string, path: string}): Promise<void> => 
       Key: file.name,
       Body: createReadStream(file.path),
     })
-  )
-
-  console.log("Backup uploaded.");
+  );
 }
 
 const dumpToFile = async (path: string): Promise<void> => {
-  console.log(`Dumping database to file at ${path}...`);
+  console.log(`Creating dump at ${path}...`);
 
   await new Promise((resolve, reject) => {
-    exec(
-      `mysqldump --host=${env.BACKUP_DATABASE_HOST} --port=${env.BACKUP_DATABASE_PORT} --user=${env.BACKUP_DATABASE_USER} --password=${env.BACKUP_DATABASE_PASSWORD} ${env.BACKUP_DATABASE_NAME} | gzip > ${path}`,
-      (error, _, stderr) => {
-        if (error) {
-          reject({ error: JSON.stringify(error), stderr });
-          return;
-        }
+    const host = `--host=${env.BACKUP_DATABASE_HOST}`;
+    const port = `--port=${env.BACKUP_DATABASE_PORT}`;
+    const user = `--user=${env.BACKUP_DATABASE_USER}`;
+    const password = `--password=${env.BACKUP_DATABASE_PASSWORD}`;
+    const databasesToExclude = ['mysql', 'sys', 'performance_schema', 'information_schema', 'innodb'].join('|');
 
-        resolve(undefined);
+    const command = env.BACKUP_DATABASE_NAME
+      ? `mysqldump ${host} ${port} ${user} ${password} ${env.BACKUP_DATABASE_NAME} | gzip > ${path}`
+      : `mysql ${host} ${port} ${user} ${password} -e "show databases;" | grep -Ev "Database|${databasesToExclude}" | xargs mysqldump ${host} ${port} ${user} ${password} --databases | gzip > ${path}`
+
+    exec(command, (error, _, stderr) => {
+      if (error) {
+        reject({ error: JSON.stringify(error), stderr });
+        return;
       }
-    );
-  });
 
-  console.log("Dump created.");
+      resolve(undefined);
+    });
+  });
 }
 
 const deleteFile = async (path: string): Promise<void> => {
@@ -60,20 +63,16 @@ const deleteFile = async (path: string): Promise<void> => {
     });
     resolve(undefined);
   });
-
-  console.log("Local dump file deleted.");
 }
 
 export const backup = async (): Promise<void> => {
-  console.log(`Starting "${env.BACKUP_DATABASE_NAME}" database backup...`)
-
   const timestamp = new Date().toISOString().replace(/[:.]+/g, '-');
   const filename = `backup-${timestamp}.sql.gz`;
   const filepath = `/tmp/${filename}`;
 
   await dumpToFile(filepath);
-  await uploadToS3({name: filename, path: filepath});
+  await uploadToS3({ name: filename, path: filepath });
   await deleteFile(filepath);
 
-  console.log("Database backup complete!")
+  console.log("Backup successfully created.");
 }

@@ -1,6 +1,6 @@
 {
   "name": "mysql-s3-backup",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Automated backups of MySQL database to S3 bucket",
   "main": "dist/index.js",
   "scripts": {
