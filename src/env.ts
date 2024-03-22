@@ -24,4 +24,9 @@ export const env = envsafe({
     default: '',
     allowEmpty: true
   }),
+  DEBUG: str({
+    desc: 'Output mysql/mysqldump commands to console.',
+    default: '0',
+    allowEmpty: true
+  }),
 });

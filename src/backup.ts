@@ -3,6 +3,10 @@ import { PutObjectCommand, S3Client, S3ClientConfig } from "@aws-sdk/client-s3";
 import { createReadStream, unlink } from "fs";
 import { env } from "./env";
 
+const isDebug = () => {
+  return env.DEBUG && env.DEBUG === '1';
+};
+
 const uploadToS3 = async (file: { name: string, path: string }): Promise<void> => {
   const bucket = env.AWS_S3_BUCKET;
   const clientOptions: S3ClientConfig = {
@@ -42,9 +46,18 @@ const dumpToFile = async (path: string): Promise<void> => {
       ? `mysqldump ${host} ${port} ${user} ${password} ${env.BACKUP_DATABASE_NAME} | gzip > ${path}`
       : `mysql ${host} ${port} ${user} ${password} -e "show databases;" | grep -Ev "Database|${databasesToExclude}" | xargs mysqldump ${host} ${port} ${user} ${password} --databases | gzip > ${path}`
 
+    if (isDebug()) {
+      console.log(`Debug: SQL command: ${command}`);
+    }
+
     exec(command, (error, _, stderr) => {
       if (error) {
         reject({ error: JSON.stringify(error), stderr });
+
+        if (isDebug()) {
+          console.log(`Debug: could not create local dump file. ${error}`);
+        }
+
         return;
       }
 
@@ -57,8 +70,13 @@ const deleteFile = async (path: string): Promise<void> => {
   console.log(`Deleting local dump file at ${path}...`);
 
   await new Promise((resolve, reject) => {
-    unlink(path, (err) => {
-      reject({ error: JSON.stringify(err) });
+    unlink(path, (error) => {
+      reject({ error: JSON.stringify(error) });
+
+      if (isDebug()) {
+        console.log(`Debug: could not remove local dump file. ${error}`);
+      }
+
       return;
     });
     resolve(undefined);
