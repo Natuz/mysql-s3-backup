@@ -36,10 +36,10 @@ const dumpToFile = async (path: string): Promise<void> => {
   console.log(`Creating dump at ${path}...`);
 
   await new Promise((resolve, reject) => {
-    const host = `--host=${env.BACKUP_DATABASE_HOST}`;
-    const port = `--port=${env.BACKUP_DATABASE_PORT}`;
-    const user = `--user=${env.BACKUP_DATABASE_USER}`;
-    const password = `--password=${env.BACKUP_DATABASE_PASSWORD}`;
+    const host = `--host='${env.BACKUP_DATABASE_HOST}'`;
+    const port = `--port='${env.BACKUP_DATABASE_PORT}'`;
+    const user = `--user='${env.BACKUP_DATABASE_USER}'`;
+    const password = `--password='${env.BACKUP_DATABASE_PASSWORD}'`;
     const databasesToExclude = ['mysql', 'sys', 'performance_schema', 'information_schema', 'innodb'].join('|');
 
     const command = env.BACKUP_DATABASE_NAME
@@ -73,7 +73,7 @@ const deleteFile = async (path: string): Promise<void> => {
     unlink(path, (error) => {
       reject({ error: JSON.stringify(error) });
 
-      if (isDebug()) {
+      if (error && isDebug()) {
         console.log(`Debug: could not remove local dump file. ${error}`);
       }
 
